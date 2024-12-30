@@ -1,5 +1,0 @@
-file 'segment-6.ts'
-file 'segment-8.ts'
-file 'segment-10.ts'
-file 'segment-12.ts'
-file 'segment-14.ts'
