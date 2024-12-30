@@ -7,10 +7,17 @@ export default function Home() {
   const [selectedResolution, setSelectedResolution] = useState<string | null>(
     null
   );
+  const [selectedFormat, setSelectedFormat] = useState<string>("mp4"); // Default format is MP4
+  const [postURL, setPostURL] = useState<string>(""); // To store input URL
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMetadata = async (url: string) => {
+  const fetchMetadata = async () => {
+    if (!postURL) {
+      setError("Please enter a URL.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setMetadata(null);
@@ -22,7 +29,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: postURL }),
       });
 
       if (!res.ok) {
@@ -41,73 +48,116 @@ export default function Home() {
 
   const downloadVideo = async () => {
     if (!metadata || !selectedResolution) {
-        setError("Please select a resolution first");
-        return;
+      setError("Please select a resolution first");
+      return;
     }
 
     setLoading(true);
     setError(null);
 
     try {
-        const res = await fetch("http://localhost:4000/download", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                profile: metadata.profile,
-                postID: metadata.postID,
-                resolution: selectedResolution,
-            }),
-        });
+      const res = await fetch("http://localhost:4000/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profile: metadata.profile,
+          postID: metadata.postID,
+          resolution: selectedResolution,
+          format: selectedFormat, // Send the selected format
+        }),
+      });
 
-        if (!res.ok) {
-            throw new Error("Failed to process video");
-        }
+      if (!res.ok) {
+        throw new Error("Failed to process video");
+      }
 
-        const data = await res.json();
+      const data = await res.json();
 
-        // Trigger the download automatically
-        const link = document.createElement("a");
-        link.href = data.filename; // Ensure this points to the correct video URL
-        link.download = "video.mp4"; // Optional: Set a default name
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      // Trigger the download automatically
+      const link = document.createElement("a");
+      link.href = data.filename; // Ensure this points to the correct video URL
+      link.download = `${metadata.postID}.${selectedFormat}`; // Set the default name based on format
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error: any) {
-        setError(error.message || "An error occurred during processing");
+      setError(error.message || "An error occurred during processing");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Bluesky Video Downloader</h1>
-      <input
-        type="text"
-        placeholder="Enter Bluesky post URL"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            const url = (e.target as HTMLInputElement).value;
-            fetchMetadata(url);
-          }
-        }}
+    <div
+      style={{
+        padding: "2rem",
+        fontFamily: "Arial, sans-serif",
+        maxWidth: "800px",
+        margin: "0 auto", // Center align content
+      }}
+    >
+      <h1 style={{ textAlign: "center", marginBottom: "2rem" }}>
+        Bluesky Video Downloader
+      </h1>
+      <div
         style={{
-          width: "100%",
-          padding: "1rem",
+          display: "flex",
+          gap: "1rem",
+          alignItems: "center",
+          justifyContent: "center",
           marginBottom: "1rem",
-          borderRadius: "4px",
-          border: "1px solid #ddd",
         }}
-      />
+      >
+        <input
+          type="text"
+          value={postURL}
+          placeholder="Enter Bluesky post URL"
+          onChange={(e) => setPostURL(e.target.value)}
+          style={{
+            flex: "2",
+            padding: "1rem",
+            borderRadius: "4px",
+            border: "1px solid #ddd",
+          }}
+        />
+
+        <select
+          value={selectedFormat}
+          onChange={(e) => setSelectedFormat(e.target.value)}
+          style={{
+            flex: "1",
+            padding: "1rem",
+            borderRadius: "4px",
+            border: "1px solid #ddd",
+          }}
+        >
+          <option value="mp4">MP4</option>
+          <option value="ts">MPEG TS</option>
+        </select>
+
+        <button
+          onClick={fetchMetadata}
+          style={{
+            padding: "1rem",
+            backgroundColor: "#0070f3",
+            color: "white",
+            borderRadius: "4px",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Process
+        </button>
+      </div>
 
       {loading && <p>Loading...</p>}
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {metadata && (
-        <div style={{ marginTop: "1rem" }}>
+        <div style={{ marginTop: "1rem", textAlign: "center" }}>
           <p>
             <strong>Thumbnail:</strong>
           </p>
@@ -129,7 +179,7 @@ export default function Home() {
           <p>
             <strong>Resolutions:</strong>
           </p>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
             {metadata.resolutions.map((res: string) => (
               <button
                 key={res}

@@ -242,19 +242,14 @@ func download(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func trimVideo(inputPath, outputPath, startTime, format string) error {
-	// Normalize paths for FFmpeg
+func trimVideo(inputFileName, outputFileName, startTime, format string) error {
+	// Construct the full paths for input and output files
+	inputPath := filepath.Join(inputFileName)
+	outputPath := filepath.Join(outputFileName)
+
+	// Normalize paths for FFmpeg (use forward slashes for compatibility)
 	ffmpegInputPath := filepath.ToSlash(inputPath)
 	ffmpegOutputPath := filepath.ToSlash(outputPath)
-
-	// Determine FFmpeg codec and extension
-	var codec string
-	if format == "mp4" {
-		codec = "libx264"
-	} else if format == "ts" {
-		codec = "mpegts"
-		ffmpegOutputPath = strings.Replace(ffmpegOutputPath, ".mp4", ".ts", 1)
-	}
 
 	fmt.Printf("Trimming video: inputPath=%s, outputPath=%s, format=%s\n", ffmpegInputPath, ffmpegOutputPath, format)
 
@@ -263,14 +258,25 @@ func trimVideo(inputPath, outputPath, startTime, format string) error {
 		return fmt.Errorf("input file does not exist: %s", ffmpegInputPath)
 	}
 
-	// Run FFmpeg command
-	cmd := exec.Command(
-		"ffmpeg", "-y", "-i", ffmpegInputPath, "-ss", startTime,
-		"-c:v", codec, "-preset", "fast", "-crf", "23",
-		"-c:a", "aac", "-strict", "experimental", ffmpegOutputPath,
-	)
+	// FFmpeg arguments
+	args := []string{
+		"-y", "-i", ffmpegInputPath, "-ss", startTime,
+	}
 
-	// Capture FFmpeg output
+	if format == "ts" {
+		// Set compatible codecs for MPEG TS
+		args = append(args, "-c:v", "mpeg2video", "-b:v", "1000k", "-c:a", "aac", "-b:a", "128k", "-strict", "experimental", ffmpegOutputPath)
+	} else if format == "mp4" {
+		// Default codecs for MP4
+		args = append(args, "-c:v", "libx264", "-preset", "fast", "-crf", "23", "-c:a", "aac", "-strict", "experimental", ffmpegOutputPath)
+	} else {
+		return fmt.Errorf("unsupported format: %s", format)
+	}
+
+	// Run FFmpeg command
+	cmd := exec.Command("ffmpeg", args...)
+
+	// Capture FFmpeg's output for debugging
 	var stdOut, stdErr strings.Builder
 	cmd.Stdout = &stdOut
 	cmd.Stderr = &stdErr
