@@ -24,6 +24,7 @@ type PostDetails struct {
 	Cid         string `json:"cid"`
 	Playlist    string `json:"playlist"`
 	Thumbnail   string `json:"thumbnail"`
+	Title       string `json:"title"`
 	LikeCount   int    `json:"likeCount"`
 	ReplyCount  int    `json:"replyCount"`
 	RepostCount int    `json:"repostCount"`
@@ -66,63 +67,67 @@ func process(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
-		fmt.Println("Error decoding request body:", err)
 		http.Error(w, "Invalid request", http.StatusBadRequest)
+		fmt.Println("Error decoding request body:", err)
 		return
 	}
 
 	if input.URL == "" {
-		fmt.Println("Error: URL is missing in the request")
 		http.Error(w, "URL is required", http.StatusBadRequest)
+		fmt.Println("Error: URL is missing in the request")
 		return
 	}
 
-	fmt.Println("Received URL:", input.URL)
 	profile, postID, err := extractPostDetails(input.URL)
 	if err != nil {
-		fmt.Println("Error extracting post details:", err)
 		http.Error(w, "Invalid URL format", http.StatusBadRequest)
+		fmt.Println("Error extracting post details:", err)
 		return
 	}
 
 	postDetails, err := FetchPostMetadata(profile, postID)
 	if err != nil {
-		fmt.Println("Error fetching post metadata:", err)
 		http.Error(w, fmt.Sprintf("Error fetching metadata: %v", err), http.StatusInternalServerError)
+		fmt.Println("Error fetching post metadata:", err)
 		return
 	}
-
-	fmt.Printf("Fetched Post Metadata: %+v\n", postDetails)
 
 	resolutions, err := fetchAvailableResolutions(postDetails.Playlist)
 	if err != nil {
-		fmt.Println("Error fetching resolutions:", err)
 		http.Error(w, fmt.Sprintf("Error fetching resolutions: %v", err), http.StatusInternalServerError)
+		fmt.Println("Error fetching resolutions:", err)
 		return
 	}
-
-	fmt.Println("Available resolutions:", resolutions)
 
 	response := map[string]interface{}{
 		"profile":     profile,
 		"postID":      postID,
 		"thumbnail":   postDetails.Thumbnail,
+		"title":       truncateTitle(postDetails.Title),
 		"likeCount":   postDetails.LikeCount,
 		"replyCount":  postDetails.ReplyCount,
 		"repostCount": postDetails.RepostCount,
-		"resolutions": resolutions,
+		"resolutions": getResolutionKeys(resolutions),
 	}
 
-	fmt.Printf("Response sent to frontend: %+v\n", response)
+	fmt.Printf("Resolutions in response: %+v\n", resolutions)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-func fetchAvailableResolutions(playlistURL string) ([]string, error) {
+// Helper function to extract keys from the map
+func getResolutionKeys(resolutionMap map[string]string) []string {
+	var keys []string
+	for key := range resolutionMap {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func fetchAvailableResolutions(playlistURL string) (map[string]string, error) {
 	fmt.Println("Fetching master playlist:", playlistURL)
 
-	// Fetch the master .m3u8 file
 	resp, err := http.Get(playlistURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch .m3u8 file: %v", err)
@@ -139,20 +144,23 @@ func fetchAvailableResolutions(playlistURL string) ([]string, error) {
 	}
 
 	lines := strings.Split(string(body), "\n")
-	var resolutions []string
+	resolutionMap := make(map[string]string)
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.Contains(line, "RESOLUTION=") {
-			// Extract the resolution value
 			resolutionStr := strings.Split(line, "RESOLUTION=")[1]
-			resolutionParts := strings.Split(resolutionStr, ",")[0] // Ignore other attributes
-			resolutions = append(resolutions, resolutionParts)
+			dimension := strings.Split(resolutionStr, ",")[0]
+
+			// Convert to user-friendly format (e.g., 360p, 720p)
+			height := strings.Split(dimension, "x")[1]
+			userResolution := fmt.Sprintf("%sp", height)
+			resolutionMap[userResolution] = dimension
 		}
 	}
 
-	fmt.Println("Available resolutions:", resolutions)
-	return resolutions, nil
+	fmt.Println("Resolution map:", resolutionMap)
+	return resolutionMap, nil
 }
 
 func download(w http.ResponseWriter, r *http.Request) {
@@ -293,7 +301,7 @@ func trimVideo(inputFileName, outputFileName, startTime, format string) error {
 	return nil
 }
 
-func processM3U8(playlistURL, resolution, postID string) error {
+func processM3U8(playlistURL, userResolution, postID string) error {
 	// Define temporary directory for this post
 	tempDir := filepath.Join("videos", postID)
 	fmt.Println("Ensuring temporary directory for the post:", tempDir)
@@ -326,19 +334,11 @@ func processM3U8(playlistURL, resolution, postID string) error {
 
 	// Parse the .m3u8 file
 	lines := strings.Split(string(body), "\n")
-	fmt.Println("Parsing master playlist for resolution:", resolution)
+	fmt.Println("Parsing master playlist for resolution:", userResolution)
 
 	var resolutionURL string
 	baseURL := playlistURL[:strings.LastIndex(playlistURL, "/")+1] // Extract base URL
 	fmt.Println("Base URL for playlist:", baseURL)
-
-	// Separate resolution into width and height
-	resolutionParts := strings.Split(resolution, "x")
-	if len(resolutionParts) != 2 {
-		return fmt.Errorf("invalid resolution format: %s", resolution)
-	}
-	targetWidth := resolutionParts[0]
-	targetHeight := resolutionParts[1]
 
 	// Iterate through lines to find the desired resolution and its URL
 	for i := 0; i < len(lines)-1; i++ {
@@ -346,15 +346,15 @@ func processM3U8(playlistURL, resolution, postID string) error {
 		fmt.Printf("Processing line %d: %s\n", i, line)
 
 		if strings.Contains(line, "RESOLUTION=") {
+			// Extract resolution dimensions (e.g., "1280x720")
 			resolutionStr := strings.Split(line, "RESOLUTION=")[1]
-			resolutionParts := strings.Split(resolutionStr, ",")[0]
-			width, height, found := strings.Cut(resolutionParts, "x")
-			if !found {
-				fmt.Printf("Skipping line %d: Invalid resolution format in line\n", i)
-				continue
-			}
+			dimension := strings.Split(resolutionStr, ",")[0]
 
-			if width == targetWidth && height == targetHeight {
+			// Convert dimensions to user-friendly format (e.g., "720p")
+			height := strings.Split(dimension, "x")[1]
+			mappedResolution := fmt.Sprintf("%sp", height)
+
+			if mappedResolution == userResolution {
 				if i+1 < len(lines) {
 					nextLine := strings.TrimSpace(lines[i+1])
 					if nextLine != "" && !strings.HasPrefix(nextLine, "#") {
@@ -367,7 +367,7 @@ func processM3U8(playlistURL, resolution, postID string) error {
 	}
 
 	if resolutionURL == "" {
-		return fmt.Errorf("resolution %s not found in .m3u8 file", resolution)
+		return fmt.Errorf("resolution %s not found in .m3u8 file", userResolution)
 	}
 
 	if !strings.HasPrefix(resolutionURL, "http") {
@@ -379,7 +379,7 @@ func processM3U8(playlistURL, resolution, postID string) error {
 	// Process resolution-specific .m3u8 file
 	err = downloadSegments(resolutionURL, tempDir)
 	if err != nil {
-		return fmt.Errorf("failed to process resolution %s: %v", resolution, err)
+		return fmt.Errorf("failed to process resolution %s: %v", userResolution, err)
 	}
 
 	return nil
@@ -540,17 +540,20 @@ func serveVideos(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, videoPath)
 }
 
+func truncateTitle(title string) string {
+	if len(title) > 64 {
+		return title[:61] + "..."
+	}
+	return title
+}
+
 func extractPostDetails(url string) (string, string, error) {
 	re := regexp.MustCompile(`/profile/([^/]+)/post/([^/]+)`)
 	matches := re.FindStringSubmatch(url)
 	if len(matches) < 3 {
 		return "", "", fmt.Errorf("invalid URL format")
 	}
-	Profile := matches[1]
-	PostID := matches[2]
-	FetchPostMetadata(Profile, PostID)
-	return Profile, PostID, nil
-
+	return matches[1], matches[2], nil
 }
 
 // fetchPostMetadata fetches the metadata for the given profile and postID.
@@ -589,6 +592,7 @@ func FetchPostMetadata(profile, postID string) (*PostDetails, error) {
 		Cid:         safeExtract(response, []string{"thread", "post", "embed", "cid"}).(string),
 		Playlist:    safeExtract(response, []string{"thread", "post", "embed", "playlist"}).(string),
 		Thumbnail:   safeExtract(response, []string{"thread", "post", "embed", "thumbnail"}).(string),
+		Title:       safeExtract(response, []string{"thread", "post", "record", "text"}).(string),
 		LikeCount:   int(safeExtract(response, []string{"thread", "post", "likeCount"}).(float64)),
 		ReplyCount:  int(safeExtract(response, []string{"thread", "post", "replyCount"}).(float64)),
 		RepostCount: int(safeExtract(response, []string{"thread", "post", "repostCount"}).(float64)),
