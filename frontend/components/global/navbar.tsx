@@ -10,6 +10,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 // Features data for dropdown
 const features: { title: string; href: string; description: string }[] = [
@@ -38,9 +39,11 @@ export default function Navbar() {
       <div className="container mx-auto flex items-center justify-between py-4 px-4 lg:px-8">
         {/* Logo Container */}
         <div className="flex-1">
-          <div className="text-3xl font-bold text-gray-800 dark:text-white">
-            Linux Lock
-          </div>
+        <Link href="/">
+  <div className="text-3xl font-bold text-gray-800 dark:text-white cursor-pointer">
+    Linux Lock
+  </div>
+</Link>
         </div>
 
         {/* Desktop Navigation Menu Container */}
@@ -84,6 +87,16 @@ export default function Navbar() {
                   Documentation
                 </a>
               </NavigationMenuItem> */}
+
+              {/* Documentation Link */}
+              <NavigationMenuItem>
+                <a
+                  href="/bsky-downloader"
+                  className="px-4 py-2 text-md font-medium text-gray-800 dark:text-white rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Bluesky Downloader
+                </a>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>

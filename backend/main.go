@@ -36,6 +36,12 @@ type AspectRatio struct {
 	Width  int `json:"width"`
 }
 
+func TestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Working"))
+}
+
 // EnsureDirectories ensures the root videos directory and post-specific subdirectory exist.
 func EnsureDirectories(postID string) (string, error) {
 	rootDir := "videos"
@@ -662,9 +668,15 @@ func main() {
 	r.HandleFunc("/process", process).Methods("POST")
 	r.HandleFunc("/download", download).Methods("POST")
 	r.PathPrefix("/videos/").HandlerFunc(serveVideos).Methods("GET")
+	r.HandleFunc("/test", TestHandler).Methods("GET")
 
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "https://5e00-2409-40d4-111d-9f89-b9e7-de7-4431-d014.ngrok-free.app"},
+		AllowedOrigins: []string{
+			"http://localhost:3000",
+			"http:linuxlock.org",
+			"https:linuxlock.org",
+			"http:linuxlock.org/api",
+			"https:linuxlock.org/api"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,

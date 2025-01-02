@@ -92,7 +92,7 @@ export default function VideoDownloader() {
         <Input
           type="text"
           value={postURL}
-          placeholder="Enter Bluesky post URL"
+          placeholder="Paste Bluesky Post Link: https://bsky.app/profile/linuxlock.bsky.social/post/3lerbmbhs447"
           onChange={(e) => setPostURL(e.target.value)}
           className="flex-2 h-12 text-foreground placeholder-muted-foreground border border-muted rounded-md"
         />
