@@ -32,13 +32,13 @@ export default function Features() {
     <div className="bg-white py-12 sm:py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base/7 font-semibold text-indigo-600">Download faster</h2>
+          <h2 className="text-base/7 font-semibold text-primary">Download faster</h2>
           <p className="mt-2 text-pretty text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl lg:text-balance">
            Why Should You Use the Bsky Video Downloader on our website?
           </p>
           <p className="mt-6 text-lg/8 text-gray-600">
-          It's easy and fast forward process to download bluesky social media videos. Just, enter the video URL, select the format, and click download.
-          It's a simple tool to save online videos offline on your device.
+          It&apos;s easy and fast forward process to download bluesky social media videos. Just, enter the video URL, select the format, and click download.
+          It&apos;s a simple tool to save online videos offline on your device.
           </p>
         </div>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
@@ -46,7 +46,7 @@ export default function Features() {
             {features.map((feature) => (
               <div key={feature.name} className="relative pl-16">
                 <dt className="text-base/7 font-semibold text-gray-900">
-                  <div className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-lg bg-indigo-600">
+                  <div className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-lg bg-primary">
                     <feature.icon aria-hidden="true" className="size-6 text-white" />
                   </div>
                   {feature.name}

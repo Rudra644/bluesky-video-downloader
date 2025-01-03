@@ -3,47 +3,49 @@
 import * as React from "react";
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 
 // Features data for dropdown
-const features: { title: string; href: string; description: string }[] = [
-  {
-    title: "Video Download",
-    href: "/features/video-download",
-    description: "Download videos directly from Bluesky posts with ease.",
-  },
-  {
-    title: "Post Insights",
-    href: "/features/post-insights",
-    description: "Analyze and gather insights from Bluesky posts.",
-  },
-  {
-    title: "Bookmark Posts",
-    href: "/features/bookmark",
-    description: "Save and organize your favorite Bluesky posts.",
-  },
-];
+// const features: { title: string; href: string; description: string }[] = [
+//   {
+//     title: "Video Download",
+//     href: "/features/video-download",
+//     description: "Download videos directly from Bluesky posts with ease.",
+//   },
+//   {
+//     title: "Post Insights",
+//     href: "/features/post-insights",
+//     description: "Analyze and gather insights from Bluesky posts.",
+//   },
+//   {
+//     title: "Bookmark Posts",
+//     href: "/features/bookmark",
+//     description: "Save and organize your favorite Bluesky posts.",
+//   },
+// ];
 
 export default function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  // const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-md fixed w-full z-50 top-0">
-      <div className="container mx-auto flex items-center justify-between py-4 px-4 lg:px-8">
+      <div className="container mx-auto flex items-center justify-between py-2 px-4 lg:px-12">
         {/* Logo Container */}
         <div className="flex-1">
-        <Link href="/">
-  <div className="text-3xl font-bold text-gray-800 dark:text-white cursor-pointer">
-    Linux Lock
-  </div>
-</Link>
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="Linux Lock"
+              width={400} // Replace with actual width
+              height={100} // Replace with actual height
+              className="h-16 w-auto cursor-pointer"
+            />
+          </Link>
         </div>
 
         {/* Desktop Navigation Menu Container */}
@@ -91,7 +93,7 @@ export default function Navbar() {
               {/* Documentation Link */}
               <NavigationMenuItem>
                 <a
-                  href="/bsky-downloader"
+                  href="/bluesky-downloader"
                   className="px-4 py-2 text-md font-medium text-gray-800 dark:text-white rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   Bluesky Downloader

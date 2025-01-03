@@ -9,8 +9,8 @@ const notoSans = Noto_Sans({
 });
 
 export const metadata = {
-  title: "BlueSky Video Downloader",
-  description: "Fetch metadata and download videos from BlueSky",
+  title: "Linux Lock - Online tools designed to streamline your workflow",
+  description: "Our collection of online tools help you accomplish more in less time. Linux Lock is one stop in today's fast-paced world where efficiency is key.",
 };
 
 export default function RootLayout({

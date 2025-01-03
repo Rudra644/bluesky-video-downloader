@@ -10,10 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heart, MessageSquare, Repeat } from "lucide-react";
 import { fetchMetadata, downloadVideo } from "@/api/bskyDownloader";
+import Image from "next/image";
 import { formatNumber } from "@/utils/formatNumber";
 
+// Define types inline
+/*************  ✨ Codeium Command 🌟  *************/
+type Metadata = {
+  profile: string;
+  postID: string;
+  title: string;
+  thumbnail: string;
+  resolutions: string[];
+  likeCount: number;
+  replyCount: number;
+  repostCount: number;
+};
+
 export default function VideoDownloader() {
-  const [metadata, setMetadata] = useState<any>(null);
+  const [metadata, setMetadata] = useState<Metadata | null>(null);
   const [selectedResolution, setSelectedResolution] = useState<string | null>(null);
   const [selectedFormat, setSelectedFormat] = useState<string>("mp4");
   const [postURL, setPostURL] = useState<string>("");
@@ -33,7 +47,7 @@ export default function VideoDownloader() {
     setSelectedResolution(null);
 
     try {
-      const data = await fetchMetadata(postURL);
+      const data: Metadata = await fetchMetadata(postURL);
       setMetadata(data);
 
       // Automatically select the highest resolution
@@ -41,7 +55,7 @@ export default function VideoDownloader() {
         (a: string, b: string) => parseInt(b) - parseInt(a)
       )[0];
       setSelectedResolution(highestResolution);
-    } catch (error: any) {
+    } catch (error: any | string) {
       setError(error.message || "An error occurred");
     } finally {
       setLoading(false);
@@ -53,19 +67,18 @@ export default function VideoDownloader() {
       setError("Please select a resolution first");
       return;
     }
-  
+
     setDownloadLoading(true);
     setError(null);
-  
+
     try {
-      // Make the download API call
       const response = await downloadVideo({
         profile: metadata.profile,
         postID: metadata.postID,
         resolution: selectedResolution,
         format: selectedFormat,
       });
-  
+
       const { filename } = response; // Ensure backend returns correct filename
       const link = document.createElement("a");
       link.href = filename; // Use the exact filename provided by the backend
@@ -78,7 +91,7 @@ export default function VideoDownloader() {
     } finally {
       setDownloadLoading(false);
     }
-  };  
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,63 +141,64 @@ export default function VideoDownloader() {
             <div className="w-full md:w-1/2">
               {loading ? (
                 <Skeleton height={200} className="rounded-md" />
-              ) : (
-                <img
+              ) : metadata && ( // Add null check here
+                <Image
                   src={metadata.thumbnail}
                   alt="Thumbnail"
+                  width={500}
+                  height={300}
                   className="w-full h-auto md:max-h-[260px] rounded-md shadow"
                 />
               )}
             </div>
-
-            {/* Metadata and Actions */}
-            <div className="w-full md:w-1/2 flex flex-col justify-between">
-              {/* Title */}
-              <div className="mb-8">
-                {loading ? (
-                  <Skeleton width="80%" height={30} />
-                ) : (
-                  <h2 className="text-2xl font-semibold text-foreground">{metadata.title}</h2>
-                )}
-              </div>
-
-              {/* Stats */}
-              <div className="flex justify-between mb-4 text-muted-foreground">
-                {["likeCount", "replyCount", "repostCount"].map((stat, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    {loading ? (
-                      <Skeleton width={50} height={20} />
-                    ) : (
-                      <>
-                        {stat === "likeCount" && <Heart className="text-red-500 hover:text-red-600" size={24} />}
-                        {stat === "replyCount" && <MessageSquare className="text-gray-500 hover:text-gray-600" size={24} />}
-                        {stat === "repostCount" && <Repeat className="text-blue-500 hover:text-blue-600" size={24} />}
-                        <span className="text-lg">{formatNumber(metadata[stat])}</span>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Resolution Selector */}
-              <div className="mb-4">
-                {loading ? (
-                  <Skeleton height={40} />
-                ) : (
-                  <Select value={selectedResolution || ""} onValueChange={setSelectedResolution}>
-                    <SelectTrigger className="w-full h-12 border border-muted text-foreground hover:bg-muted rounded-md">
-                      <SelectValue placeholder="Select Resolution" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {metadata.resolutions.map((res: string) => (
-                        <SelectItem key={res} value={res}>
-                          {res}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
+           {/* Metadata and Actions */}
+           <div className="w-full md:w-1/2 flex flex-col justify-between">
+             {/* Title */}
+             <div className="mb-8">
+               {loading ? (
+                 <Skeleton width="80%" height={30} />
+               ) : (
+                 <h2 className="text-2xl font-semibold text-foreground">{metadata?.title}</h2>
+               )}
+             </div>
+           
+             {/* Stats */}
+             <div className="flex justify-between mb-4 text-muted-foreground">
+               {["likeCount", "replyCount", "repostCount"].map((stat, index) => (
+                 <div key={index} className="flex items-center gap-2">
+                   {loading ? (
+                     <Skeleton width={50} height={20} />
+                   ) : (
+                     <>
+                       {stat === "likeCount" && <Heart className="text-red-500 hover:text-red-600" size={24} />}
+                       {stat === "replyCount" && <MessageSquare className="text-gray-500 hover:text-gray-600" size={24} />}
+                       {stat === "repostCount" && <Repeat className="text-blue-500 hover:text-blue-600" size={24} />}
+                       <span className="text-lg">{metadata && formatNumber(metadata[stat as keyof Metadata] as number)}</span>
+                     </>
+                   )}
+                 </div>
+               ))}
+             </div>
+           
+             {/* Resolution Selector */}
+             <div className="mb-4">
+               {loading ? (
+                 <Skeleton height={40} />
+               ) : (
+                 <Select value={selectedResolution || ""} onValueChange={setSelectedResolution}>
+                   <SelectTrigger className="w-full h-12 border border-muted text-foreground hover:bg-muted rounded-md">
+                     <SelectValue placeholder="Select Resolution" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {metadata?.resolutions.map((res: string) => (
+                       <SelectItem key={res} value={res}>
+                         {res}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               )}
+             </div>
 
               {/* Download Button */}
               {loading ? (

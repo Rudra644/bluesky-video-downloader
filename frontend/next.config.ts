@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: ["video.bsky.app", "bsky.app"]
+  }
 };
 
 export default nextConfig;

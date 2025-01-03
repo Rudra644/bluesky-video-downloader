@@ -30,7 +30,7 @@ export default function HowItWorks() {
               (HD, SD, or more).
             </li>
             <li>
-              <strong>Step 4:</strong> Click the "Download" button and let us
+              <strong>Step 4:</strong> Click the &quot;Download&quot; button and let us
               handle the rest!
             </li>
           </ul>

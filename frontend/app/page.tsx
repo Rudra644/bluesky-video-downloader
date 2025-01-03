@@ -10,19 +10,19 @@ export default function Home() {
     <main className="bg-white dark:bg-gray-900">
       <Navbar ></Navbar>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-blue-600 to-blue-400 text-white mt-12 py-20 lg:py-32">
+      <section className="relative bg-gradient-to-b from-primary to-blue-500 text-white mt-12 py-20 lg:py-32">
         <div className="container mx-auto px-4 text-center">
           <h1 className="sm:w-3/4 mx-auto text-4xl lg:text-6xl font-bold">
           Revolutionize & Speed Up Your Workflow with our Utilities
           </h1>
           <p className="sm:w-3/4 mx-auto mt-4 text-lg lg:text-xl">
-            Linux Lock is a one stop in today's fast-paced world where efficiency is key.
+            Linux Lock is a one stop in today&apos;s fast-paced world where efficiency is key.
             Our collection of online tools is designed to streamline your workflow and help you accomplish more in less time.
-            Wether you're a student, a professional, or simply someone who wants to save time, Linux Lock has got you covered.
+            Wether you&apos;re a student, a professional, or simply someone who wants to save time, Linux Lock has got you covered.
           </p>
           <div className="mt-6 flex justify-center space-x-4">
             <Link
-              href="/bsky-downloader"
+              href="/bluesky-downloader"
               className="px-6 py-3 bg-white text-blue-600 font-medium rounded-lg shadow hover:bg-gray-100 transition"
             >
               Bluesky Video Downloader
